@@ -1,0 +1,10 @@
+[
+  { "group": "profile", "label": "氏名", "value": "山田 太郎" },
+  { "group": "profile", "label": "フリガナ", "value": "ヤマダ タロウ" },
+  { "group": "profile", "label": "メールアドレス", "value": "taro@example.com" },
+  { "group": "profile", "label": "電話番号", "value": "09000000000" },
+  { "group": "address", "label": "郵便番号", "value": "100-0001" },
+  { "group": "address", "label": "住所", "value": "東京都千代田区千代田1-1 サンプルビル101" },
+  { "group": "links", "label": "portfolio", "value": "https://example.com/" },
+  { "group": "notes", "label": "自己PR（長文もOK）", "value": "複数行のテキストも\nそのまま保存・コピーできる。" }
+]

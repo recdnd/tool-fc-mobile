@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>fc-mobile</title>
+<link rel="manifest" href="manifest.webmanifest">
+<style>
+/* fc-mobile · PD+FC 行動端。設計對齊 pf-rec mobile（圓鈕/accent/無反白），非桌面模式。 */
+:root {
+  --bg: white;
+  --fg: black;
+  --text: black;
+  --accent: #dc2626;
+  --btn-bg: rgba(0, 0, 0, 0.1);
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: auto; }
+html, body { margin: 0; padding: 0; }
+body {
+  font-family: "Courier New", Courier, monospace;
+  font-size: 0.95rem;
+  background: var(--bg);
+  color: var(--text);
+  height: 100dvh;
+  overflow: hidden;
+}
+button { appearance: none; border: none; background: none; font: inherit; color: inherit; cursor: pointer; }
+
+/* status：無 bar，浮動小字 */
+.status {
+  position: fixed;
+  top: calc(env(safe-area-inset-top, 0px) + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.75rem;
+  color: var(--accent);
+  pointer-events: none;
+  z-index: 20;
+}
+
+/* 右下圓鈕列（照搬 pf-rec mobile circle-btn） */
+.fab-stack {
+  position: fixed;
+  right: 0.9rem;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 1.2rem);
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  z-index: 10;
+}
+.circle-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: none;
+  font-size: 1.2rem;
+  line-height: 1;
+  color: var(--text);
+  background-color: var(--btn-bg);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+.circle-btn:active {
+  transform: scale(0.95);
+  background-color: var(--accent);
+  color: white;
+}
+.circle-btn.armed {
+  background-color: var(--accent);
+  color: white;
+}
+
+/* list：全屏，無頂 bar */
+#list {
+  height: 100dvh;
+  overflow-y: auto;
+  padding: calc(env(safe-area-inset-top, 0px) + 2rem) 1.2rem
+           calc(env(safe-area-inset-bottom, 0px) + 6rem);
+}
+.group { font-size: 0.7rem; color: var(--accent); margin: 1rem 0 0.3rem; text-transform: lowercase; }
+.group:first-child { margin-top: 0; }
+.row {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0.3rem 0.2rem;
+}
+.row:active .v, .row.copy-success .v { color: var(--accent); }
+.row:active .c, .row.copy-success .c { color: var(--accent); opacity: 1; }
+.row .t { flex: 1; min-width: 0; }
+.row .k { display: block; font-size: 0.7rem; color: #888; }
+.row .v { display: block; font-size: 0.95rem;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row .c { flex: none; font-size: 0.9rem; opacity: 0.3; }
+
+.void {
+  width: 100%;
+  height: 70%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  opacity: 0.3;
+  user-select: none;
+}
+button.void:active { opacity: 1; color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="status" id="status"></div>
+<main id="list"></main>
+
+<div class="fab-stack">
+  <button class="circle-btn" id="btn-import" title="import" aria-label="import">📥</button>
+  <button class="circle-btn" id="btn-export" title="export" aria-label="export">⇩</button>
+  <button class="circle-btn" id="btn-clear" title="clear" aria-label="clear">🧹</button>
+</div>
+
+<input type="file" id="import-file" accept="application/json,.json" hidden>
+
+<script>
+const KEY = "qf.items.v1";
+let items = load();
+function load() {
+  try { return JSON.parse(localStorage.getItem(KEY)) || []; } catch (_e) { return []; }
+}
+function save() { localStorage.setItem(KEY, JSON.stringify(items)); }
+
+const statusEl = document.getElementById("status");
+let statusTimer = 0;
+function report(text) {
+  statusEl.textContent = text;
+  clearTimeout(statusTimer);
+  statusTimer = setTimeout(() => { statusEl.textContent = ""; }, 3000);
+}
+function buzz(ms) { if (navigator.vibrate) navigator.vibrate(ms); }
+
+document.querySelectorAll(".circle-btn").forEach((btn) => {
+  btn.addEventListener("touchstart", () => buzz(30), { passive: true });
+});
+
+function render() {
+  const list = document.getElementById("list");
+  list.innerHTML = "";
+  if (items.length === 0) {
+    const e = document.createElement("button");
+    e.className = "void";
+    e.textContent = "📃";
+    e.title = "import json";
+    e.setAttribute("aria-label", "import json");
+    e.addEventListener("click", () => document.getElementById("import-file").click());
+    list.appendChild(e);
+    return;
+  }
+  let g = null;
+  for (const it of items) {
+    if (it.group !== g) {
+      g = it.group;
+      const gt = document.createElement("div");
+      gt.className = "group";
+      gt.textContent = g;
+      list.appendChild(gt);
+    }
+    const row = document.createElement("div");
+    row.className = "row";
+    const t = document.createElement("div"); t.className = "t";
+    const k = document.createElement("span"); k.className = "k"; k.textContent = it.label;
+    const v = document.createElement("span"); v.className = "v"; v.textContent = it.value;
+    t.append(k, v);
+    const c = document.createElement("span"); c.className = "c"; c.textContent = "📃";
+    row.append(t, c);
+    row.addEventListener("click", () => copy(it.value, row, c), { passive: true });
+    list.appendChild(row);
+  }
+}
+
+function copy(value, row, glyphEl) {
+  const done = () => {
+    buzz(20);
+    row.classList.add("copy-success");
+    glyphEl.textContent = "✓";
+    report("copied.");
+    setTimeout(() => { row.classList.remove("copy-success"); glyphEl.textContent = "📃"; }, 700);
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(value).then(done, () => fallbackCopy(value, done));
+  } else fallbackCopy(value, done);
+}
+function fallbackCopy(value, done) {
+  const ta = document.createElement("textarea");
+  ta.value = value; document.body.appendChild(ta);
+  ta.select(); document.execCommand("copy"); ta.remove(); done();
+}
+
+/* import · 點擊即選檔上傳 json */
+const fileInput = document.getElementById("import-file");
+document.getElementById("btn-import").addEventListener("click", () => fileInput.click());
+fileInput.addEventListener("change", async () => {
+  const file = fileInput.files && fileInput.files[0];
+  fileInput.value = "";
+  if (!file) return;
+  let data;
+  try { data = JSON.parse(await file.text()); } catch (_e) { report("parse failed."); return; }
+  const group = file.name.replace(/\.json$/i, "").replace(/[_-]?seed$/i, "") || "profile";
+  let n = 0;
+  const put = (gr, label, value) => {
+    if (typeof value !== "string" || !value.trim()) return;
+    const i = items.findIndex(x => x.group === gr && x.label === label);
+    if (i >= 0) items[i].value = value; else items.push({ group: gr, label, value });
+    n++;
+  };
+  if (Array.isArray(data)) {
+    for (const e of data) if (e && e.label) put(e.group || group, String(e.label), String(e.value ?? ""));
+  } else if (data && typeof data === "object") {
+    for (const [k, v] of Object.entries(data)) put(group, k, String(v));
+  }
+  save(); render();
+  buzz(30);
+  report(n + " recorded.");
+});
+
+document.getElementById("btn-export").addEventListener("click", () => {
+  const dump = JSON.stringify(items, null, 2);
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(dump).then(() => report("exported."));
+  } else fallbackCopy(dump, () => report("exported."));
+});
+
+const clearBtn = document.getElementById("btn-clear");
+let armed = 0;
+clearBtn.addEventListener("click", () => {
+  if (!armed) {
+    armed = 1;
+    clearBtn.classList.add("armed");
+    clearBtn.textContent = "?";
+    setTimeout(() => { armed = 0; clearBtn.classList.remove("armed"); clearBtn.textContent = "🧹"; }, 3000);
+    return;
+  }
+  items = []; save(); render();
+  armed = 0; clearBtn.classList.remove("armed"); clearBtn.textContent = "🧹";
+  buzz(50);
+  report("cleared.");
+});
+
+render();
+
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js");
+</script>
+</body>
+</html>

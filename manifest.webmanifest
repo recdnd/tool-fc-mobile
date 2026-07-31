@@ -1,0 +1,9 @@
+{
+  "name": "fc-mobile",
+  "short_name": "fc",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "icons": []
+}
