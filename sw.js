@@ -1,5 +1,5 @@
 /* qf · offline cache. bump VERSION on deploy to invalidate. */
-const VERSION = "fc-mobile-v2";
+const VERSION = "fc-mobile-v3";
 const ASSETS = ["./", "index.html", "manifest.webmanifest"];
 
 self.addEventListener("install", (e) => {
