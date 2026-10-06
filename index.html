@@ -8,112 +8,57 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>fc-mobile</title>
 <link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📃</text></svg>">
 <style>
-/* fc-mobile · PD+FC 行動端。設計對齊 pf-rec mobile（圓鈕/accent/無反白），非桌面模式。 */
-:root {
-  --bg: white;
-  --fg: black;
-  --text: black;
-  --accent: #dc2626;
-  --btn-bg: rgba(0, 0, 0, 0.1);
+/* fc-mobile - PD+FC 行動端. 2026-10-02 主筆「對齊新前端規格標準(參考 band/發布欄位)」:
+   rec-masters/tools/發布欄位.html と同じ語彙. 白地 / 単色 k の alpha 階 / border 0 / 影 - 動き なし.
+   欄 = 超透明黒の箱 .05 -> 触れる .10 -> 複製の瞬間 .18, ラベルは系統藍. 押せる絵文字 .85 -> 1. */
+:root{
+  --ink:#000;
+  --op:#0000ff;          /* 系統藍: 複製できた */
+  --pick:#ff0000;        /* 系統紅: 危ない操作の確認 */
+  --bg:#fff;
+  --k:5,5,5;             /* 主題黒, 底色框だけに使う */
+  --font: ui-monospace,"SF Mono",Menlo,"Courier New","Hiragino Sans","PingFang TC",monospace;
 }
-* { box-sizing: border-box; }
-html { scroll-behavior: auto; }
-html, body { margin: 0; padding: 0; }
-body {
-  font-family: "Courier New", Courier, monospace;
-  font-size: 0.95rem;
-  background: var(--bg);
-  color: var(--text);
-  height: 100dvh;
-  overflow: hidden;
-}
-button { appearance: none; border: none; background: none; font: inherit; color: inherit; cursor: pointer; }
+*{ box-sizing:border-box; }
+html,body{ margin:0; padding:0; background:var(--bg); color:var(--ink); }
+body{ font:13px/1.35 var(--font); height:100dvh; overflow:hidden; }
+button,input,select,textarea{ border:0; border-radius:0; margin:0; padding:0; background:none; color:inherit; font:inherit; outline:none; cursor:pointer; }
 
-/* status：無 bar，浮動小字 */
-.status {
-  position: fixed;
-  top: calc(env(safe-area-inset-top, 0px) + 10px);
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 0.75rem;
-  color: var(--accent);
-  pointer-events: none;
-  z-index: 20;
-}
+/* 状態: 上に浮く小さい字(系統藍) */
+.status{ position:fixed; top:calc(env(safe-area-inset-top,0px) + 4px); left:50%; transform:translateX(-50%);
+  color:var(--op); pointer-events:none; z-index:20; }
 
-/* 右下圓鈕列（照搬 pf-rec mobile circle-btn） */
-.fab-stack {
-  position: fixed;
-  right: 0.9rem;
-  bottom: calc(env(safe-area-inset-bottom, 0px) + 1.2rem);
-  display: flex;
-  flex-direction: column;
-  gap: 0.7rem;
-  z-index: 10;
-}
-.circle-btn {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  border: none;
-  font-size: 1.2rem;
-  line-height: 1;
-  color: var(--text);
-  background-color: var(--btn-bg);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-}
-.circle-btn:active {
-  transform: scale(0.95);
-  background-color: var(--accent);
-  color: white;
-}
-.circle-btn.armed {
-  background-color: var(--accent);
-  color: white;
-}
+/* 全局の鍵: 右下に浮く底色框(毛玻璃, 殻の背景 alpha .50 固定) */
+.fab-stack{ position:fixed; right:4px; bottom:calc(env(safe-area-inset-bottom,0px) + 4px); display:flex; flex-direction:column; gap:3px; z-index:10;
+  padding:3px; background:rgba(255,255,255,.50); -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px); }
+.circle-btn{ width:auto; padding:1px 3px; line-height:1.4; background:rgba(var(--k),.08); opacity:.85; }
+.circle-btn:hover,.circle-btn:focus-visible{ opacity:1; background:rgba(var(--k),.16); }
+.circle-btn:active{ background:rgba(var(--k),.22); }
+.circle-btn.armed{ opacity:1; color:var(--pick); background:rgba(var(--k),.22); }
 
-/* list：全屏，無頂 bar */
-#list {
-  height: 100dvh;
-  overflow-y: auto;
-  padding: calc(env(safe-area-inset-top, 0px) + 2rem) 1.2rem
-           calc(env(safe-area-inset-bottom, 0px) + 6rem);
-}
-.group { font-size: 0.7rem; color: var(--accent); margin: 1rem 0 0.3rem; text-transform: lowercase; }
-.group:first-child { margin-top: 0; }
-.row {
-  min-height: 44px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 0.3rem 0.2rem;
-}
-.row:active .v, .row.copy-success .v { color: var(--accent); }
-.row:active .c, .row.copy-success .c { color: var(--accent); opacity: 1; }
-.row .t { flex: 1; min-width: 0; }
-.row .k { display: block; font-size: 0.7rem; color: #888; }
-.row .v { display: block; font-size: 0.95rem;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.row .c { flex: none; font-size: 0.9rem; opacity: 0.3; }
+/* 一覧 */
+#list{ height:100dvh; overflow-y:auto; padding:calc(env(safe-area-inset-top,0px) + 4px) 4px calc(env(safe-area-inset-bottom,0px) + 72px); }
+.group{ color:rgba(var(--k),.5); margin:6px 0 2px; }
+.group:first-child{ margin-top:0; }
 
-.void {
-  position: fixed;
-  inset: 0;
-  z-index: 1;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  /* emoji 字形光學中心偏上，下移補償；hit 區仍為全屏 inset:0 */
-  padding-top: 50px;
-  font-size: 2rem;
-  opacity: 0.3;
-  user-select: none;
-}
-button.void:active { opacity: 1; color: var(--accent); }
+/* 欄: 箱全体を押すと複製. 右上の 📃 は印(押しても同じ) */
+.row{ position:relative; display:block; margin:0 0 3px; padding:3px 22px 3px 3px; background:rgba(var(--k),.05); cursor:pointer; }
+.row:hover{ background:rgba(var(--k),.10); }
+.row:active,.row.copy-success{ background:rgba(var(--k),.18); }
+.row .t{ min-width:0; }
+.row .k{ display:block; color:rgba(var(--k),.5); }
+.row.copy-success .k{ color:var(--op); }
+.row .v{ display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.row .c{ position:absolute; top:2px; right:3px; line-height:1; opacity:.85; }
+.row:hover .c{ opacity:1; }
+.row.copy-success .c{ color:var(--op); opacity:1; }
+
+/* 空: 真ん中の 📃 を押すと json を読む */
+.void{ position:fixed; inset:0; z-index:1; width:100%; height:100%; display:flex; align-items:center; justify-content:center;
+  font-size:2rem; opacity:.85; user-select:none; }
+.void:hover{ opacity:1; }
 </style>
 </head>
 <body>

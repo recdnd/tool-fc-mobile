@@ -44,4 +44,4 @@ UI 變更不准動 schema（08 spec 規則 3）。
 
 ## 種子
 
-`DungeonsRoot/PD+FC/Personal-Directory/human/quick_fill/qf_seed.json`（私庫，勿混入本 repo）。
+`DungeonsRoot/PD+FC/fc-mobile/seeds/`(私庫, 鏡像へ同期しない)。
